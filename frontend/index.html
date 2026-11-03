@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="دلدلک - مدل هوش مصنوعی محلی با رابط کاربری فارسی">
+<title>دلدلک | مدل هوش مصنوعی محلی</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M10 16.6C10 16.6 3.1 12.4 3.1 7.9c0-2.5 1.9-4.1 4.1-4.1 1.2 0 2.3.6 2.8 1.5.5-.9 1.6-1.5 2.8-1.5 2.2 0 4.1 1.6 4.1 4.1 0 4.5-6.9 8.7-6.9 8.7Z" fill="none" stroke="#F85149" stroke-width="1.7" stroke-linejoin="round"/>
+      <path d="M4.9 10.3h2.4l1.2-2.9 2.6 5.7 1.2-2.8h2.8" fill="none" stroke="#1F6FEB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="brand-name">دلدلک</span>
+    <span id="modelBadge" class="badge model-badge mono" dir="ltr">…</span>
+  </div>
+  <div class="topbar-side">
+    <span class="status-wrap">
+      <span class="dot dot-muted" id="statusDot" aria-hidden="true"></span>
+      <span class="status-text small" id="statusText" data-i18n="common.loading">در حال بارگذاری…</span>
+    </span>
+    <button id="langToggle" class="btn btn-ghost btn-sm" type="button" data-i18n-title="settings.language">EN</button>
+  </div>
+</header>
+
+<div class="shell">
+
+  <nav class="sidebar" aria-label="main navigation">
+    <button class="nav-btn active" data-view="chat" type="button">
+      <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 6.2c0-1.5 1-2.7 2.5-2.7h8c1.5 0 2.5 1.2 2.5 2.7v5.1c0 1.5-1 2.7-2.5 2.7H9.2l-4 3v-3.1c-1-.3-1.7-1.4-1.7-2.6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      <span data-i18n="nav.chat">چت</span>
+    </button>
+    <button class="nav-btn" data-view="agent" type="button">
+      <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="5" y="5" width="10" height="10" rx="1.5"/><rect x="8.2" y="8.2" width="3.6" height="3.6" rx=".8"/><path d="M8 2.5v2M12 2.5v2M8 15.5v2M12 15.5v2M2.5 8h2M2.5 12h2M15.5 8h2M15.5 12h2"/></g></svg>
+      <span data-i18n="nav.agent">عامل</span>
+    </button>
+    <button class="nav-btn" data-view="files" type="button">
+      <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6.1c0-1 .7-1.8 1.7-1.8h3l1.7 1.9h5.9c1 0 1.7.8 1.7 1.8v6.4c0 1-.7 1.8-1.7 1.8H4.7c-1 0-1.7-.8-1.7-1.8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      <span data-i18n="nav.files">فایل‌ها</span>
+    </button>
+    <button class="nav-btn" data-view="projects" type="button">
+      <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M10 2.4 17 6v8l-7 3.6L3 14V6Z"/><path d="M3.4 6.2 10 9.7l6.6-3.5M10 9.7V17"/></g></svg>
+      <span data-i18n="nav.projects">پروژه‌ها</span>
+    </button>
+    <button class="nav-btn" data-view="system" type="button">
+      <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2.8 10h3.4l2-5.5 3.6 11 2-5.5h3.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span data-i18n="nav.system">سیستم</span>
+    </button>
+    <button class="nav-btn" data-view="settings" type="button">
+      <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 6.5h4.8M12 6.5h5M3 13.5h6.8M14 13.5h3"/><circle cx="10.4" cy="6.5" r="1.9"/><circle cx="12.4" cy="13.5" r="1.9"/></g></svg>
+      <span data-i18n="nav.settings">تنظیمات</span>
+    </button>
+  </nav>
+
+  <main class="main">
+
+    <!-- ============ CHAT ============ -->
+    <section id="view-chat" class="view">
+      <div class="chat-main panel">
+        <div class="chat-toolbar">
+          <select id="sessionSelect" class="select grow" aria-label="sessions"></select>
+          <button id="newSessionBtn" class="btn btn-ghost icon-only" type="button" data-i18n-title="chat.new">
+            <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
+          <button id="delSessionBtn" class="btn btn-ghost icon-only" type="button" data-i18n-title="chat.deleteSession">
+            <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h12M8 5.5V4h4v1.5M6 5.5l.8 10.5h6.4L14 5.5M8.3 8.5v5M11.7 8.5v5"/></g></svg>
+          </button>
+        </div>
+        <div id="messages" class="messages">
+          <div class="empty-state"><p class="small muted" data-i18n="common.loading">در حال بارگذاری…</p></div>
+        </div>
+        <div class="composer">
+          <textarea id="chatInput" rows="1" data-i18n-ph="chat.placeholder" placeholder="پیام خود را بنویسید…"></textarea>
+          <button id="sendBtn" class="btn btn-primary" type="button">
+            <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3.5 9.4 11.1M17 3.5l-4.8 13.2-2.8-5.6-5.6-2.8Z"/></g></svg>
+            <span data-i18n="chat.send">ارسال</span>
+          </button>
+          <button id="stopBtn" class="btn btn-danger" type="button" hidden>
+            <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><rect x="5.5" y="5.5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            <span data-i18n="chat.stop">توقف</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AGENT ============ -->
+    <section id="view-agent" class="view" hidden>
+      <div class="agent-grid">
+        <aside class="panel card pad agent-side">
+          <div class="side-head">
+            <h3 data-i18n="agent.tasks">تسک‌ها</h3>
+            <button id="agentRefreshBtn" class="btn btn-ghost icon-only" type="button" data-i18n-title="agent.refresh">
+              <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 10a6.5 6.5 0 1 1-1.9-4.6M16.5 2.8v3.2h-3.2"/></g></svg>
+            </button>
+          </div>
+          <div class="agent-form">
+            <label class="field">
+              <span data-i18n="agent.instruction">دستور تسک</span>
+              <textarea id="agentInstruction" rows="3" data-i18n-ph="agent.instructionPh" placeholder="مثلاً: یک پروژه ماشین‌حساب با پایتون بساز و برایش تست بنویس"></textarea>
+            </label>
+            <div class="row">
+              <label class="field grow">
+                <span data-i18n="agent.mode">حالت</span>
+                <select id="agentMode" class="select">
+                  <option value="auto" data-i18n="mode.auto">خودکار</option>
+                  <option value="coding" data-i18n="mode.coding">کدنویسی</option>
+                  <option value="bash" data-i18n="mode.bash">بش</option>
+                </select>
+              </label>
+              <button id="agentRunBtn" class="btn btn-primary" type="button">
+                <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11l9-5.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+                <span data-i18n="agent.run">اجرای تسک</span>
+              </button>
+            </div>
+          </div>
+          <div id="taskList" class="task-list">
+            <div class="empty-state pad-sm"><p class="small muted" data-i18n="common.loading">در حال بارگذاری…</p></div>
+          </div>
+        </aside>
+        <section class="panel card pad agent-detail-wrap" id="taskDetail">
+          <div class="empty-state"><p class="small muted" data-i18n="agent.noDetail">برای دیدن جزئیات، یک تسک را انتخاب کنید</p></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ============ FILES ============ -->
+    <section id="view-files" class="view" hidden>
+      <div class="files-grid" id="filesGrid">
+        <div class="panel files-list-panel">
+          <div class="files-toolbar">
+            <div id="crumbBar" class="crumbs"></div>
+            <div class="row wrap">
+              <button id="newFileBtn" class="btn btn-ghost btn-sm" type="button">
+                <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.8h5.2L15 6.6v10.6H6Z"/><path d="M11 2.8v4h4M10.5 10v4M8.5 12h4"/></g></svg>
+                <span data-i18n="files.newFile">فایل جدید</span>
+              </button>
+              <button id="newFolderBtn" class="btn btn-ghost btn-sm" type="button">
+                <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.1c0-1 .7-1.8 1.7-1.8h3l1.7 1.9h5.9c1 0 1.7.8 1.7 1.8v6.4c0 1-.7 1.8-1.7 1.8H4.7c-1 0-1.7-.8-1.7-1.8Z"/><path d="M10 9.5v4M8 11.5h4"/></g></svg>
+                <span data-i18n="files.newFolder">پوشهٔ جدید</span>
+              </button>
+              <button id="refreshFilesBtn" class="btn btn-ghost icon-only" type="button" data-i18n-title="files.refresh">
+                <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 10a6.5 6.5 0 1 1-1.9-4.6M16.5 2.8v3.2h-3.2"/></g></svg>
+              </button>
+            </div>
+          </div>
+          <div id="fileList" class="file-list">
+            <div class="empty-state"><p class="small muted" data-i18n="common.loading">در حال بارگذاری…</p></div>
+          </div>
+        </div>
+        <aside class="panel files-editor-panel" id="editorPanel" hidden>
+          <div class="editor-head">
+            <div class="editor-titles">
+              <strong id="editorTitle">—</strong>
+              <code id="editorPath" class="mono small muted" dir="ltr"></code>
+            </div>
+            <div class="row">
+              <button id="copyPathBtn" class="btn btn-ghost icon-only" type="button" data-i18n-title="files.copyPath">
+                <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="7.5" width="9" height="9" rx="1.5"/><path d="M5 12.5h-.5A1.5 1.5 0 0 1 3 11V5.5A1.5 1.5 0 0 1 4.5 4H10a1.5 1.5 0 0 1 1.5 1.5V6"/></g></svg>
+              </button>
+              <button id="editorCloseBtn" class="btn btn-ghost icon-only" type="button" data-i18n-title="common.close">
+                <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <textarea id="editorArea" class="editor-area" dir="ltr" spellcheck="false"></textarea>
+          <div class="editor-foot">
+            <button id="saveFileBtn" class="btn btn-primary" type="button">
+              <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5V13M6.5 9.5l3.5 3.5 3.5-3.5M4 16.5h12"/></g></svg>
+              <span data-i18n="files.save">ذخیره</span>
+            </button>
+            <button id="deleteFileBtn" class="btn btn-danger-ghost" type="button">
+              <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h12M8 5.5V4h4v1.5M6 5.5l.8 10.5h6.4L14 5.5M8.3 8.5v5M11.7 8.5v5"/></g></svg>
+              <span data-i18n="files.delete">حذف</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ PROJECTS ============ -->
+    <section id="view-projects" class="view" hidden>
+      <div class="view-head">
+        <h2 data-i18n="nav.projects">پروژه‌ها</h2>
+        <button id="newProjectBtn" class="btn btn-primary" type="button">
+          <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <span data-i18n="projects.new">پروژهٔ جدید</span>
+        </button>
+      </div>
+      <div id="projectsGrid" class="cards-grid">
+        <div class="empty-state"><p class="small muted" data-i18n="common.loading">در حال بارگذاری…</p></div>
+      </div>
+    </section>
+
+    <!-- ============ SYSTEM ============ -->
+    <section id="view-system" class="view" hidden>
+      <div class="view-head">
+        <h2 data-i18n="nav.system">سیستم</h2>
+        <button id="sysRefreshBtn" class="btn btn-ghost btn-sm" type="button">
+          <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 10a6.5 6.5 0 1 1-1.9-4.6M16.5 2.8v3.2h-3.2"/></g></svg>
+          <span data-i18n="system.refresh">بازخوانی</span>
+        </button>
+      </div>
+      <div id="sysGrid" class="cards-grid">
+        <div class="empty-state"><p class="small muted" data-i18n="common.loading">در حال بارگذاری…</p></div>
+      </div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section id="view-settings" class="view" hidden>
+      <div class="view-head"><h2 data-i18n="nav.settings">تنظیمات</h2></div>
+      <div class="settings-grid">
+        <div class="panel card pad">
+          <h3 data-i18n="settings.key">کلید API</h3>
+          <div class="row wrap">
+            <code id="keyMasked" class="mono key-mask" dir="ltr">—</code>
+            <button id="copyKeyBtn" class="btn btn-ghost btn-sm" type="button">
+              <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="7.5" width="9" height="9" rx="1.5"/><path d="M5 12.5h-.5A1.5 1.5 0 0 1 3 11V5.5A1.5 1.5 0 0 1 4.5 4H10a1.5 1.5 0 0 1 1.5 1.5V6"/></g></svg>
+              <span data-i18n="common.copy">کپی</span>
+            </button>
+            <button id="rotateKeyBtn" class="btn btn-danger-ghost btn-sm" type="button">
+              <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.8" cy="13.2" r="3.3"/><path d="M9.2 10.8 17 3M12.5 7.5l2.4 2.4"/></g></svg>
+              <span data-i18n="settings.rotate">چرخش کلید</span>
+            </button>
+          </div>
+          <p class="hint" data-i18n="settings.keyNote">این کلید را محرمانه نگه دارید؛ با چرخش، کلید قبلی باطل می‌شود.</p>
+        </div>
+        <div class="panel card pad">
+          <h3 data-i18n="settings.language">زبان رابط</h3>
+          <div class="seg" role="group">
+            <button id="langFa" class="seg-btn active" type="button">فارسی</button>
+            <button id="langEn" class="seg-btn" type="button">English</button>
+          </div>
+          <h3 data-i18n="settings.theme">پوسته</h3>
+          <p class="hint" data-i18n="settings.themeInfo">تم تیره با پالت رسمی GitHub به‌صورت پیش‌فرض فعال است.</p>
+          <h3 data-i18n="settings.autowake">راهنمای Auto-Wake</h3>
+          <p class="hint" data-i18n="settings.autowakeNote">Auto-Wake از طریق GitHub Actions در مخزن پروژه تنظیم می‌شود؛ جزئیات در سند API آمده است.</p>
+          <a id="autowakeLink" class="btn btn-ghost btn-sm" href="/docs" target="_blank" rel="noopener">
+            <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 4.5h-3A1.5 1.5 0 0 0 4 6v9.5A1.5 1.5 0 0 0 5.5 17H15a1.5 1.5 0 0 0 1.5-1.5v-3M12 3.5h4.5V8M16 4 9.5 10.5"/></g></svg>
+            <span data-i18n="settings.autowakeLink">مشاهدهٔ سند API</span>
+          </a>
+        </div>
+        <div class="panel card pad card-snippets">
+          <h3 data-i18n="settings.snippets">نمونهٔ کد استفاده از API</h3>
+          <div class="snippet-block">
+            <div class="snippet-head">
+              <span data-i18n="settings.python">Python (کتابخانه requests)</span>
+              <button id="copyPyBtn" class="btn btn-ghost btn-xs" type="button">
+                <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="7.5" width="9" height="9" rx="1.5"/><path d="M5 12.5h-.5A1.5 1.5 0 0 1 3 11V5.5A1.5 1.5 0 0 1 4.5 4H10a1.5 1.5 0 0 1 1.5 1.5V6"/></g></svg>
+                <span data-i18n="common.copy">کپی</span>
+              </button>
+            </div>
+            <pre id="pySnippet" class="code-block" dir="ltr"></pre>
+          </div>
+          <div class="snippet-block">
+            <div class="snippet-head">
+              <span data-i18n="settings.js">JavaScript (fetch)</span>
+              <button id="copyJsBtn" class="btn btn-ghost btn-xs" type="button">
+                <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="7.5" width="9" height="9" rx="1.5"/><path d="M5 12.5h-.5A1.5 1.5 0 0 1 3 11V5.5A1.5 1.5 0 0 1 4.5 4H10a1.5 1.5 0 0 1 1.5 1.5V6"/></g></svg>
+                <span data-i18n="common.copy">کپی</span>
+              </button>
+            </div>
+            <pre id="jsSnippet" class="code-block" dir="ltr"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<nav class="bottomnav" aria-label="mobile navigation">
+  <button class="nav-btn active" data-view="chat" type="button">
+    <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 6.2c0-1.5 1-2.7 2.5-2.7h8c1.5 0 2.5 1.2 2.5 2.7v5.1c0 1.5-1 2.7-2.5 2.7H9.2l-4 3v-3.1c-1-.3-1.7-1.4-1.7-2.6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+    <span data-i18n="nav.chat">چت</span>
+  </button>
+  <button class="nav-btn" data-view="agent" type="button">
+    <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="5" y="5" width="10" height="10" rx="1.5"/><rect x="8.2" y="8.2" width="3.6" height="3.6" rx=".8"/><path d="M8 2.5v2M12 2.5v2M8 15.5v2M12 15.5v2M2.5 8h2M2.5 12h2M15.5 8h2M15.5 12h2"/></g></svg>
+    <span data-i18n="nav.agent">عامل</span>
+  </button>
+  <button class="nav-btn" data-view="files" type="button">
+    <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6.1c0-1 .7-1.8 1.7-1.8h3l1.7 1.9h5.9c1 0 1.7.8 1.7 1.8v6.4c0 1-.7 1.8-1.7 1.8H4.7c-1 0-1.7-.8-1.7-1.8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+    <span data-i18n="nav.files">فایل‌ها</span>
+  </button>
+  <button class="nav-btn" data-view="projects" type="button">
+    <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M10 2.4 17 6v8l-7 3.6L3 14V6Z"/><path d="M3.4 6.2 10 9.7l6.6-3.5M10 9.7V17"/></g></svg>
+    <span data-i18n="nav.projects">پروژه‌ها</span>
+  </button>
+  <button class="nav-btn" data-view="system" type="button">
+    <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2.8 10h3.4l2-5.5 3.6 11 2-5.5h3.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span data-i18n="nav.system">سیستم</span>
+  </button>
+  <button class="nav-btn" data-view="settings" type="button">
+    <svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 6.5h4.8M12 6.5h5M3 13.5h6.8M14 13.5h3"/><circle cx="10.4" cy="6.5" r="1.9"/><circle cx="12.4" cy="13.5" r="1.9"/></g></svg>
+    <span data-i18n="nav.settings">تنظیمات</span>
+  </button>
+</nav>
+
+<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+<div id="modalRoot"></div>
+
+<noscript><div class="noscript">جاوااسکریپت لازم است.</div></noscript>
+<script src="/js/app.js"></script>
+</body>
+</html>
