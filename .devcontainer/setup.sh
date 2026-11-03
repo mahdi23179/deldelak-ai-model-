@@ -35,7 +35,11 @@ log "مرحله ۳/۶: ساخت llama.cpp"
 if [ -x "$LLAMA_DIR/build/bin/llama-server" ]; then
   ok "llama-server از قبل ساخته شده است"
 else
-  if [ ! -d "$LLAMA_DIR" ]; then
+  # /opt needs root: create the dir and hand it to the container user
+  $SUDO mkdir -p "$LLAMA_DIR"
+  $SUDO chown -R "$(id -u):$(id -g)" "$LLAMA_DIR" 2>/dev/null || true
+  if [ ! -d "$LLAMA_DIR/.git" ]; then
+    rm -rf "$LLAMA_DIR"
     git clone --depth 1 "$LLAMA_REPO" "$LLAMA_DIR" >/dev/null 2>&1 || fail "git clone llama.cpp failed"
   fi
   cmake -S "$LLAMA_DIR" -B "$LLAMA_DIR/build" -DLLAMA_CURL=OFF -DCMAKE_BUILD_TYPE=Release >/dev/null
