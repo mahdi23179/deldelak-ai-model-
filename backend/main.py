@@ -127,6 +127,7 @@ async def lifespan(app: FastAPI):
     # try to start llama-server in background (non-blocking)
     import threading
     threading.Thread(target=manager.start, daemon=True).start()
+    threading.Thread(target=_model_watchdog, daemon=True).start()
     yield
     await llm.aclose()
     manager.stop()
@@ -168,6 +169,21 @@ def health():
         "uptime_s": round(time.time() - BOOT_TIME, 1),
         "time": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
     }
+
+
+def _model_watchdog() -> None:
+    """Background self-healing: once setup.sh finishes (binary+model exist),
+    load the model without needing a restart. Runs every 30 s."""
+    while True:
+        try:
+            if not manager.is_running() and manager.binary_available() and manager.model_available():
+                print("[deldelak] watchdog: model files ready - loading model", flush=True)
+                manager.start(wait=True)
+                if manager.is_running():
+                    print("[deldelak] watchdog: model loaded", flush=True)
+        except Exception as e:
+            db.log_error(None, "watchdog", str(e))
+        time.sleep(30)
 
 
 @app.get("/api/key")

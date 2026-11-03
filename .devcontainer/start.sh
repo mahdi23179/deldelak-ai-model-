@@ -11,6 +11,18 @@ warn() { echo -e "${YELLOW}[warn]${NC} $*"; }
 
 healthy() { curl -fsS --max-time 2 "http://127.0.0.1:${PORT}/health" >/dev/null 2>&1; }
 
+# Self-healing: if the model or llama-server binary is missing (e.g. the first
+# postCreate run was interrupted), rerun setup in the BACKGROUND (idempotent -
+# it skips finished stages and resumes the model download) while the API boots.
+MODEL_OK=false
+[ -n "${MODEL_PATH:-}" ] && [ -f "$MODEL_PATH" ] && MODEL_OK=true
+[ -x /opt/llama.cpp/build/bin/llama-server ] && [ -f /opt/models/qwen2.5-3b-instruct-q4-k-m.gguf ] && MODEL_OK=true
+if [ "$MODEL_OK" != "true" ] && ! pgrep -f ".devcontainer/setup.sh" >/dev/null 2>&1; then
+  warn "مدل/llama-server کامل نیست - setup در پس‌زمینه ادامه می‌یابد (لاگ: .state/setup-rerun.log)"
+  mkdir -p "$REPO_ROOT/.state"
+  nohup bash "$REPO_ROOT/.devcontainer/setup.sh" >> "$REPO_ROOT/.state/setup-rerun.log" 2>&1 &
+fi
+
 if healthy; then
   ok "سرویس از قبل فعال است"
 else
