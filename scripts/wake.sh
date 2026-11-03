@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deldelak AI Model - wake the Codespace + activate the chatbot from your own machine.
 # Needs: GH_TOKEN env var (fine-grained PAT with Codespaces: write) and curl+jq.
-# Usage: GH_TOKEN=ghp_xxx bash scripts/wake.sh [repo] [port]
+# Usage: GH_TOKEN=<your-token> bash scripts/wake.sh [repo] [port]
 set -euo pipefail
 REPO="${1:-mahdi23179/deldelak-ai-model-}"
 PORT="${2:-8000}"
