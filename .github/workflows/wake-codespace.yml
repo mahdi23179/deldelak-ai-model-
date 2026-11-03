@@ -24,7 +24,8 @@ on:
 permissions:
   contents: read
   issues: write
-  codespaces: write
+  # NOTE: `codespaces` is not a valid GITHUB_TOKEN permission key; the Codespace
+  # operations run with secrets.WAKE_TOKEN (a PAT with Codespaces: write).
 
 concurrency:
   group: wake-codespace
