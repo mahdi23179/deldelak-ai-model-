@@ -39,7 +39,9 @@ else
   $SUDO mkdir -p "$LLAMA_DIR"
   $SUDO chown -R "$(id -u):$(id -g)" "$LLAMA_DIR" 2>/dev/null || true
   if [ ! -d "$LLAMA_DIR/.git" ]; then
-    rm -rf "$LLAMA_DIR"
+    $SUDO rm -rf "$LLAMA_DIR" 2>/dev/null || true
+    $SUDO mkdir -p "$LLAMA_DIR"
+    $SUDO chown -R "$(id -u):$(id -g)" "$LLAMA_DIR" 2>/dev/null || true
     git clone --depth 1 "$LLAMA_REPO" "$LLAMA_DIR" >/dev/null 2>&1 || fail "git clone llama.cpp failed"
   fi
   cmake -S "$LLAMA_DIR" -B "$LLAMA_DIR/build" -DLLAMA_CURL=OFF -DCMAKE_BUILD_TYPE=Release >/dev/null
