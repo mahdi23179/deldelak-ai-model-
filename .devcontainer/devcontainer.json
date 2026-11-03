@@ -1,7 +1,11 @@
 {
   "name": "Deldelak AI Model (local Persian AI agent)",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
-  "features": {},
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
+  },
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "postStartCommand": "bash .devcontainer/start.sh",
   "forwardPorts": [8000],

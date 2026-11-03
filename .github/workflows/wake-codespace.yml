@@ -95,9 +95,8 @@ jobs:
         if: env.RUN == 'true'
         run: |
           NAME="${{ steps.cs.outputs.name }}"
-          gh api -X PUT "user/codespaces/${NAME}/ports/${PORT}" \
-            -H "Content-Type: application/json" \
-            -d '{"visibility":"open"}' >/dev/null 2>&1 || \
+          # the raw REST ports endpoint 404s; gh CLI talks to the dev-tunnel service
+          gh codespace ports visibility "${PORT}:public" -c "$NAME" || \
             echo "::warning::نتوانستم پورت را عمومی کنم (ممکن است قبلاً عمومی باشد)"
 
       - name: Extend idle timeout (best effort, max 240 min)
