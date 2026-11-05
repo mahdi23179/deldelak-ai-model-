@@ -1,16 +1,26 @@
 """Deldelak AI Model - agent tools.
 
 Every tool runs inside the sandboxed workspace directory (config.WORKSPACE_DIR).
-Paths are validated to stay inside the workspace. Sensitive operations are flagged
-and require explicit user approval via the API.
+Paths are validated to stay inside the workspace (symlink + prefix safe).
+
+HARD TRUTH (mission §6): this is NOT a real sandbox. The agent runs as the
+Codespace container user which holds passwordless sudo. What we do here is
+best-effort hardening, layered defense:
+  1. env allowlist - child processes NEVER see GitHub tokens/secrets
+  2. resource limits - RLIMIT_CPU / AS / NPROC / FSIZE per child
+  3. process-group kill - timeouts kill the whole tree, no orphans
+  4. cwd jail + sudo denial + dangerous-command approval gate
+  5. append-only audit log (.state/audit.jsonl) for every execution
 """
 from __future__ import annotations
 
 import json
 import os
 import pathlib
+import resource
 import shutil
 import subprocess
+import threading
 import time
 import zipfile
 from typing import Any, Callable
@@ -26,12 +36,29 @@ class ToolError(Exception):
     pass
 
 
+_audit_lock = threading.Lock()
+
+
+def _audit(event: str, detail: dict) -> None:
+    """Append-only audit trail for tool executions (no secrets in payloads)."""
+    try:
+        config.ensure_dirs()
+        line = json.dumps({"ts": time.time(), "event": event, **detail},
+                          ensure_ascii=False, default=str)[:2000]
+        with _audit_lock, open(config.AUDIT_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass
+
+
 # ---------------- path safety ----------------
 
 def safe_path(rel: str, base: pathlib.Path | None = None) -> pathlib.Path:
-    base = base or WS
+    """Workspace jail - resists `/base-evil` prefix confusion AND symlinks:
+    the fully-resolved path must be the base itself or a descendant."""
+    base = (base or WS).resolve()
     p = (base / (rel or ".")).resolve()
-    if not str(p).startswith(str(base.resolve())):
+    if p != base and base not in p.parents:
         raise ToolError("مسیر خارج از فضای کاری مجاز نیست")
     return p
 
@@ -51,31 +78,74 @@ def is_sensitive(tool: str, args: dict) -> bool:
             return True
     return False
 
-
 # ---------------- tool implementations ----------------
 
 def _py_runner_available() -> str:
     return shutil.which("python3") or "python3"
 
 
+def _limits_preexec() -> None:
+    """Child-side resource limits (runs in the forked child before exec).
+    Honest budgets for a 2-core/8GB Codespace."""
+    resource.setrlimit(resource.RLIMIT_CPU, (config.AGENT_STEP_TIMEOUT, config.AGENT_STEP_TIMEOUT + 5))
+    resource.setrlimit(resource.RLIMIT_AS, (2 * 1024 * 1024 * 1024, 2 * 1024 * 1024 * 1024))  # 2GB
+    resource.setrlimit(resource.RLIMIT_NPROC, (64, 64))
+    resource.setrlimit(resource.RLIMIT_FSIZE, (256 * 1024 * 1024, 256 * 1024 * 1024))  # 256MB
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+
+
 def terminal_execute(args: dict, ctx: dict) -> dict:
     cmd = str(args.get("command", "")).strip()
     if not cmd:
         raise ToolError("command خالی است")
+    if len(cmd) > 8000:
+        raise ToolError("دستور بیش از حد بلند است")
     cwd = safe_path(args.get("cwd", ".")) if args.get("cwd") else ctx.get("cwd", WS)
     timeout = min(int(args.get("timeout", config.AGENT_STEP_TIMEOUT)), 300)
+    low = cmd.lower()
+    if any(pat in low for pat in config.SENSITIVE_PATTERNS) and not ctx.get("approved"):
+        _audit("terminal.blocked_sensitive", {"task_id": ctx.get("task_id"), "cmd": cmd[:200]})
+        raise ToolError("این دستور الگوی حساس دارد و بدون تأیید کاربر اجرا نمی‌شود (is_sensitive آن را علامت می‌زند)")
     t0 = time.time()
+    _audit("terminal.execute", {"task_id": ctx.get("task_id"), "cmd": cmd[:300], "cwd": str(cwd)})
+    proc = None
     try:
-        r = subprocess.run(
-            ["bash", "-lc", cmd], cwd=str(cwd), timeout=timeout,
-            capture_output=True, text=True, env={**os.environ, "DEBIAN_FRONTEND": "noninteractive"},
+        proc = subprocess.Popen(
+            ["bash", "-lc", cmd], cwd=str(cwd),
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+            env=config.child_env(),
+            start_new_session=True,  # own process group → whole-tree kill works
+            preexec_fn=_limits_preexec,
         )
-        out = (r.stdout or "") + (("\n[stderr]\n" + r.stderr) if r.stderr else "")
-        out = out.strip()[:12000]
-        return {"ok": r.returncode == 0, "output": out or "(بدون خروجی)",
-                "exit_code": r.returncode, "elapsed_s": round(time.time() - t0, 2)}
-    except subprocess.TimeoutExpired:
-        raise ToolError(f"دستور از مهلت {timeout} ثانیه عبور کرد")
+        try:
+            out, _ = proc.communicate(timeout=timeout)
+            rc = proc.returncode
+        except subprocess.TimeoutExpired:
+            _kill_tree(proc)
+            out, rc = "", 124
+        out = (out or "").strip()[:12000]
+        res = {"ok": rc == 0, "output": out or "(بدون خروجی)", "exit_code": rc,
+               "elapsed_s": round(time.time() - t0, 2)}
+        if rc == 124:
+            res["output"] = f"[timeout] دستور از مهلت {timeout} ثانیه عبور کرد و کل گروه فرایند کشته شد\n" + res["output"]
+        _audit("terminal.result", {"task_id": ctx.get("task_id"), "exit": rc, "elapsed": res["elapsed_s"]})
+        return res
+    except Exception as e:
+        if proc and proc.poll() is None:
+            _kill_tree(proc)
+        raise ToolError(f"اجرای دستور ناموفق بود: {type(e).__name__}")
+
+
+def _kill_tree(proc: subprocess.Popen) -> None:
+    """Kill the whole process group (bash children AND grandchildren)."""
+    import signal
+    try:
+        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except Exception:
+        try:
+            proc.kill()
+        except Exception:
+            pass
 
 
 def python_execute(args: dict, ctx: dict) -> dict:
@@ -250,12 +320,22 @@ def git_cmd(sub: str, args: dict, ctx: dict) -> dict:
     if sub == "diff":
         return terminal_execute({"command": "git diff HEAD", "cwd": str(pdir)}, ctx)
     if sub == "commit":
-        msg = str(args.get("message", "تغییرات عامل دلدلک")).replace('"', "'")
+        msg = str(args.get("message", "تغییرات عامل دلدلک"))[:200]
         terminal_execute({"command": "git add -A", "cwd": str(pdir)}, ctx)
-        r = terminal_execute(
-            {"command": f'git -c user.name="deldelak-agent" -c user.email="agent@deldelak.local" commit -m "{msg}"', "cwd": str(pdir)},
-            ctx)
-        return r
+        # argv list - the message can never become shell code (audit A7)
+        t0 = time.time()
+        try:
+            r = subprocess.run(
+                ["git", "-c", "user.name=deldelak-agent", "-c", "user.email=agent@deldelak.local",
+                 "commit", "-m", msg],
+                cwd=str(pdir), capture_output=True, text=True, timeout=60,
+                env=config.child_env(),
+            )
+            out = ((r.stdout or "") + (r.stderr or "")).strip()[:4000]
+            return {"ok": r.returncode == 0, "output": out or "(کامیت ثبت شد)",
+                    "exit_code": r.returncode, "elapsed_s": round(time.time() - t0, 2)}
+        except Exception as e:
+            return {"ok": False, "output": f"{type(e).__name__}: {e}", "exit_code": -1}
     raise ToolError(f"ابزار git ناشناخته: {sub}")
 
 

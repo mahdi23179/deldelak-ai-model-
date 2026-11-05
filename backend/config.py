@@ -27,7 +27,27 @@ API_HOST = os.getenv("API_HOST", "0.0.0.0")
 
 DB_PATH = STATE_DIR / "deldelak.db"
 API_KEY_FILE = STATE_DIR / "api_key"
-KEY_CLAIMED_FILE = STATE_DIR / "key_claimed"
+KEY_CLAIMED_FILE = STATE_DIR / "key_claimed"  # legacy, no longer used for access control
+
+# ---- owner-only key recovery (GitHub OAuth) ----
+OWNER_LOGIN = os.getenv("DELDELAK_OWNER_LOGIN", "mahdi23179")
+OAUTH_CLIENT_ID = os.getenv("DELDELAK_OAUTH_CLIENT_ID", "")
+OAUTH_CLIENT_SECRET = os.getenv("DELDELAK_OAUTH_CLIENT_SECRET", "")  # Codespace secret ONLY
+OAUTH_REDIRECT_URI = os.getenv("DELDELAK_OAUTH_REDIRECT_URI", "")    # computed at boot when empty
+
+# ---- gateway integration ----
+GATEWAY_URL = os.getenv("DELDELAK_GATEWAY_URL", "").rstrip("/")
+GATEWAY_SHARED_SECRET = os.getenv("DELDELAK_GATEWAY_SECRET", "")     # Codespace + Cloudflare secret
+PUBLIC_PORT_URL = os.getenv("DELDELAK_PUBLIC_PORT_URL", "")         # auto-computed from CODESPACE_NAME
+
+# ---- request/agent limits ----
+MAX_FILE_BODY_BYTES = int(os.getenv("DELDELAK_MAX_FILE_BODY", str(2 * 1024 * 1024)))
+MAX_CHAT_BODY_BYTES = int(os.getenv("DELDELAK_MAX_CHAT_BODY", str(512 * 1024)))
+DOWNLOAD_TOKEN_TTL_S = int(os.getenv("DELDELAK_DL_TOKEN_TTL", "300"))
+DOCS_ENABLED = os.getenv("DELDELAK_DOCS", "0") == "1"
+
+# audit log for agent tool executions
+AUDIT_LOG_FILE = STATE_DIR / "audit.jsonl"
 
 EXPORTS_DIR = WORKSPACE_DIR / "exports"
 
@@ -43,13 +63,44 @@ SENSITIVE_PATTERNS = (
     "rm -rf /", "rm -rf ~", "rm -fr /", "mkfs", "shutdown", "reboot", "halt",
     "dd if=", ":(){", "chmod -R 777 /", "> /dev/sda", "curl | sh", "curl | bash",
     "wget | sh", "wget | bash", "sudo rm", "sudo dd", "passwd", "history -c",
+    "sudo", "env |", "printenv", "/proc/", ".ssh", "authorized_keys", "base64 -d",
 )
+
+# variables a child process may inherit (allowlist approach - secrets never leak)
+CHILD_ENV_ALLOW = (
+    "PATH", "HOME", "USER", "LOGNAME", "SHELL", "LANG", "LC_ALL", "TERM",
+    "TMPDIR", "PWD", "CODESPACE_NAME", "CODESPACE_REGION", "PYTHONUNBUFFERED",
+)
+
+
+def child_env() -> dict:
+    """Scratch environment for agent child processes: allowlist + scrub.
+    Anything containing TOKEN/SECRET/KEY/PAT/CREDENTIAL is dropped even if a
+    future change adds it to the allowlist by mistake."""
+    import re as _re
+    out = {}
+    for k, v in os.environ.items():
+        if k in CHILD_ENV_ALLOW and not _re.search(r"TOKEN|SECRET|KEY|PAT|CRED", k, _re.I):
+            out[k] = v
+    out["DEBIAN_FRONTEND"] = "noninteractive"
+    out["PYTHONDONTWRITEBYTECODE"] = "1"
+    return out
 
 
 def ensure_dirs() -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
     EXPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def public_base_url() -> str:
+    """Best-effort public URL of port 8000 for this Codespace.
+    Port visibility persists per codespace; it is set once via gh CLI (see docs)."""
+    if PUBLIC_PORT_URL:
+        return PUBLIC_PORT_URL.rstrip("/")
+    name = os.getenv("CODESPACE_NAME", "")
+    port = API_PORT
+    return f"https://{name}-{port}.app.github.dev" if name else f"http://127.0.0.1:{port}"
 
 
 VERSION = "1.0.0"

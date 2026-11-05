@@ -78,9 +78,11 @@ class AgentEngine:
                             continue
                         db.finish_step(sid, "running", "تأیید شد؛ در حال اجرا...")
                         db.update_task(task_id, status="executing")
+                        step_ctx = {"task_id": task_id, "cwd": plan.get("cwd"), "approved": True}
+                    else:
+                        step_ctx = {"task_id": task_id, "cwd": plan.get("cwd")}
                     try:
-                        res = tools.dispatch(step["tool"], step.get("args", {}),
-                                             {"task_id": task_id, "cwd": plan.get("cwd")})
+                        res = tools.dispatch(step["tool"], step.get("args", {}), step_ctx)
                         db.finish_step(sid, "ok" if res.get("ok") else "error",
                                        str(res.get("output", ""))[:8000])
                         prior.append({"tool": step["tool"], "title": step.get("title"),

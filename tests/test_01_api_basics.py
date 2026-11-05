@@ -9,11 +9,13 @@ def test_health_public_no_auth(api):
     assert r.status_code == 200
     d = r.json()
     assert d["service"] == "deldelak-ai-model"
-    for k in ("status", "model_loaded", "uptime_s"):
+    for k in ("status", "model_loaded", "model_loading", "active_requests",
+              "queued_requests", "uptime_s", "last_activity", "last_error", "backend_ready"):
         assert k in d, f"missing {k}"
     assert isinstance(d["uptime_s"], (int, float))
     assert isinstance(d["model_loaded"], bool)
-    assert d["status"] in ("ok", "degraded")
+    assert isinstance(d["active_requests"], int)
+    assert d["status"] in ("ok", "degraded", "loading_model", "busy")
 
 
 def test_models_requires_auth(api):
@@ -83,20 +85,51 @@ def test_chat_not_ready_503(api):
     assert r2.status_code == 200
 
 
-def test_api_key_claim_once(api):
-    # Deterministic claim window: no other test uses GET /api/key, so removing the
-    # claim marker (inside the isolated tmp STATE dir only) is safe here.
-    claimed_file = pathlib.Path(api.config.KEY_CLAIMED_FILE)
-    if claimed_file.exists():
-        claimed_file.unlink()
-    r1 = api.client.get("/api/key")
-    assert r1.status_code == 200
-    d1 = r1.json()
-    assert d1["claimed"] is True
-    assert d1["key"] == api.key  # matches backend.main.API_KEY / API_KEY_FILE
-    r2 = api.client.get("/api/key")
-    assert r2.status_code == 403
-    assert "ادعا" in r2.json()["detail"] or "دریافت" in r2.json()["detail"]
+def test_api_key_never_served_to_first_caller(api):
+    """v2 security: the first-come claim window is REMOVED. GET /api/key must
+    never return key material to an unauthenticated caller (owner-only OAuth)."""
+    r = api.client.get("/api/key")
+    assert r.status_code == 401
+    d = r.json()
+    assert "key" not in d or d.get("key") != api.key
+    assert d["error"] == "owner_session_required"
+    assert d["recovery_url"].startswith("/api/key/oauth")
+    # and it still does not leak after repeated hits
+    for _ in range(3):
+        r2 = api.client.get("/api/key")
+        assert r2.status_code in (401, 429)
+        body = r2.text
+        assert api.key not in body  # key material never appears
+
+
+def test_api_key_reveal_requires_owner_session(api):
+    """Reveal needs the owner session cookie (or valid key) + CSRF header."""
+    r = api.client.post("/api/key/reveal")  # no session, no CSRF header
+    assert r.status_code == 401
+    # a valid API key alone IS accepted for automation (Bearer header)
+    r2 = api.client.post("/api/key/reveal", headers={"Authorization": f"Bearer {api.key}",
+                                                    "X-Requested-With": "XMLHttpRequest"})
+    assert r2.status_code == 200
+    assert r2.json()["key"] == api.key
+    assert api.key not in str(api.client.get("/health").text)  # never leaks via health
+
+
+def test_api_key_rotate_revokes_old_key(api):
+    """Rotating must invalidate the previous key immediately (mission §3.8)."""
+    old = api.key
+    r = api.client.post("/api/key/rotate", headers={"Authorization": f"Bearer {old}",
+                                                   "X-Requested-With": "XMLHttpRequest"})
+    assert r.status_code == 200
+    new = r.json()["key"]
+    assert new != old and new == api.main.API_KEY
+    # old key is dead
+    r_old = api.client.get("/v1/models", headers={"Authorization": f"Bearer {old}"})
+    assert r_old.status_code == 401
+    # new key works
+    r_new = api.client.get("/v1/models", headers={"Authorization": f"Bearer {new}"})
+    assert r_new.status_code == 200
+    api.key = new  # keep the session-scoped fixture usable
+    api.state.joinpath("api_key").write_text(new)  # keep .state file consistent
 
 
 def test_system_status_fields(api):

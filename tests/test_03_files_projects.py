@@ -86,9 +86,19 @@ def test_project_create_run_test_export(api):
     assert d["exit_code"] == 0
     assert "OK" in d["output"]
 
-    # export → zip download with query-param auth
-    r = api.client.get(f"/v1/projects/{pid}/export", params={"api_key": api.key})
+    # export → v2: two-step download token (the API key never appears in a URL)
+    r = api.client.post(f"/v1/projects/{pid}/export-token", headers=api.headers)
     assert r.status_code == 200
+    tok = r.json()["token"]
+    # a wrong/absent token must be rejected
+    r_bad = api.client.get(f"/v1/projects/{pid}/export", params={"download_token": "nope"})
+    assert r_bad.status_code == 401
+    assert api.key not in str(r_bad.request.url)  # key is never in the URL
+    r = api.client.get(f"/v1/projects/{pid}/export", params={"download_token": tok})
+    assert r.status_code == 200
+    # one-time: replaying the same token fails
+    r2 = api.client.get(f"/v1/projects/{pid}/export", params={"download_token": tok})
+    assert r2.status_code == 401
     assert r.headers["content-type"].startswith("application/zip")
     assert zipfile.is_zipfile(io.BytesIO(r.content))
     with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
