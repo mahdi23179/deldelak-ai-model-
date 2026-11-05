@@ -1,0 +1,94 @@
+name: Codespace ops (start/stop with real state verification)
+
+# جایگزین wake-codespace.yml (mission §4):
+# - بیدارسازی از طریق Issue حذف شد (تزریق اسکریپت + موفقیت صوری).
+# - Keep-Alive دائمی حذف شد (مصرف سهمیه). خاموشی را Gateway انجام می‌دهد.
+# - این workflow فقط برای عملیات دستی/اتوماسیون مالک است و هر مرحله را با
+#   وضعیت واقعی گزارش می‌کند و در صورت شکست، fail صریح دارد.
+# - ورودی‌های کاربر هرگز مستقیم در run: درون‌یابی نمی‌شوند (env indirection).
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "start | stop"
+        required: false
+        default: "start"
+  repository_dispatch:
+    types: [cs-ops]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cs-ops
+  cancel-in-progress: false
+
+jobs:
+  ops:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve action (env indirection - no script injection)
+        env:
+          RAW_ACTION: ${{ github.event.inputs.action || github.event.client_payload.action || 'start' }}
+        run: |
+          case "$RAW_ACTION" in
+            start|stop) echo "ACTION=$RAW_ACTION" >> "$GITHUB_ENV" ;;
+            *) echo "ACTION=start" >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: Stop codespace (idempotent)
+        if: env.ACTION == 'stop'
+        env:
+          GH_TOKEN: ${{ secrets.WAKE_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          NAME=$(gh api "repos/${REPO}/codespaces?per_page=100" --jq '.codespaces[0].name' 2>/dev/null || true)
+          if [ -z "$NAME" ]; then echo "no codespace; nothing to stop"; exit 0; fi
+          gh api -X POST "user/codespaces/${NAME}/stop" >/dev/null && echo "stop requested: ${NAME}"
+          sleep 5
+          STATE=$(gh api "user/codespaces/${NAME}" --jq '.state')
+          echo "state after stop request: ${STATE}"
+          case "$STATE" in
+            Stopping|Stopped|Shutdown|Archived) echo "OK" ;;
+            *) echo "::error::unexpected state after stop: ${STATE}"; exit 1 ;;
+          esac
+
+      - name: Start codespace with real verification
+        if: env.ACTION == 'start'
+        env:
+          GH_TOKEN: ${{ secrets.WAKE_TOKEN }}
+          REPO: ${{ github.repository }}
+          PORT: "8000"
+        run: |
+          chmod +x scripts/wf/verify_state.sh
+          bash scripts/wf/verify_state.sh "$REPO" "$PORT"
+
+      - name: Job summary
+        if: env.ACTION == 'start' && always()
+        env:
+          GH_TOKEN: ${{ secrets.WAKE_TOKEN }}
+          REPO: ${{ github.repository }}
+          PORT: "8000"
+        run: |
+          NAME=$(gh api "repos/${REPO}/codespaces?per_page=100" --jq '.codespaces[0].name' 2>/dev/null || echo "?")
+          STATE=$(gh api "user/codespaces/${NAME}" --jq '.state' 2>/dev/null || echo "unknown")
+          {
+            echo "## Codespace ops result"
+            echo ""
+            echo "| item | value |"
+            echo "|---|---|"
+            echo "| action | ${ACTION} |"
+            echo "| codespace | \`${NAME}\` |"
+            echo "| real state | \`${STATE}\` |"
+            if [ "${STATE}" = "Running" ]; then
+              echo "| API base | https://${NAME}-${PORT}.app.github.dev |"
+              echo "| health | https://${NAME}-${PORT}.app.github.dev/health |"
+            fi
+            echo ""
+            echo "> Users do NOT need this workflow anymore: the Gateway wakes the"
+            echo "> Codespace automatically on the first API request."
+          } >> "$GITHUB_STEP_SUMMARY"
