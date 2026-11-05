@@ -1,0 +1,79 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.16, pytest-9.0.2, pluggy-1.6.0 -- /home/z/.venv/bin/python3
+cachedir: .pytest_cache
+metadata: {'Python': '3.12.16', 'Platform': 'Linux-5.10.134-013.15.kangaroo.al8.x86_64-x86_64-with-glibc2.41', 'Packages': {'pytest': '9.0.2', 'pluggy': '1.6.0'}, 'Plugins': {'Faker': '40.1.2', 'metadata': '3.1.1', 'asyncio': '1.3.0', 'ddtrace': '4.2.2', 'cov': '7.0.0', 'json-report': '1.5.0', 'anyio': '4.13.0'}}
+rootdir: /home/z/my-project/deldelak-ai-model-
+configfile: pytest.ini
+plugins: Faker-40.1.2, metadata-3.1.1, asyncio-1.3.0, ddtrace-4.2.2, cov-7.0.0, json-report-1.5.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 53 items
+
+tests/test_01_api_basics.py::test_health_public_no_auth PASSED           [  1%]
+tests/test_01_api_basics.py::test_models_requires_auth PASSED            [  3%]
+tests/test_01_api_basics.py::test_models_wrong_key PASSED                [  5%]
+tests/test_01_api_basics.py::test_models_with_auth PASSED                [  7%]
+tests/test_01_api_basics.py::test_chat_completion_non_stream PASSED      [  9%]
+tests/test_01_api_basics.py::test_chat_completion_stream PASSED          [ 11%]
+tests/test_01_api_basics.py::test_chat_not_ready_503 PASSED              [ 13%]
+tests/test_01_api_basics.py::test_api_key_never_served_to_first_caller PASSED [ 15%]
+tests/test_01_api_basics.py::test_api_key_reveal_requires_owner_session PASSED [ 16%]
+tests/test_01_api_basics.py::test_api_key_rotate_revokes_old_key PASSED  [ 18%]
+tests/test_01_api_basics.py::test_system_status_fields PASSED            [ 20%]
+tests/test_02_agent.py::test_agent_full_task_create_project PASSED       [ 22%]
+tests/test_02_agent.py::test_agent_sensitive_delete_denied PASSED        [ 24%]
+tests/test_02_agent.py::test_agent_sensitive_delete_approved PASSED      [ 26%]
+tests/test_02_agent.py::test_agent_task_not_found PASSED                 [ 28%]
+tests/test_02_agent.py::test_agent_approve_not_waiting_conflict PASSED   [ 30%]
+tests/test_02_agent.py::test_respond_tool_conversational PASSED          [ 32%]
+tests/test_02_agent.py::test_agent_verifier_failure_replan_bounded PASSED [ 33%]
+tests/test_03_files_projects.py::test_files_crud PASSED                  [ 35%]
+tests/test_03_files_projects.py::test_files_path_traversal_blocked PASSED [ 37%]
+tests/test_03_files_projects.py::test_project_create_run_test_export PASSED [ 39%]
+tests/test_03_files_projects.py::test_sessions_flow PASSED               [ 41%]
+tests/test_04_persistence.py::test_state_survives_restart PASSED         [ 43%]
+tests/test_04_persistence.py::test_api_key_stable_across_restart PASSED  [ 45%]
+tests/test_05_security.py::test_safe_path_blocks_prefix_confusion PASSED [ 47%]
+tests/test_05_security.py::test_ws_path_blocks_sibling_prefix PASSED     [ 49%]
+tests/test_05_security.py::test_safe_path_allows_normal_paths PASSED     [ 50%]
+tests/test_05_security.py::test_child_env_never_contains_tokens PASSED   [ 52%]
+tests/test_05_security.py::test_terminal_execute_cannot_read_github_token PASSED [ 54%]
+tests/test_05_security.py::test_terminal_timeout_kills_whole_tree PASSED [ 56%]
+tests/test_05_security.py::test_sensitive_command_requires_approval PASSED [ 58%]
+tests/test_05_security.py::test_rate_limiter_sliding_window PASSED       [ 60%]
+tests/test_05_security.py::test_get_key_returns_recovery_instructions PASSED [ 62%]
+tests/test_05_security.py::test_oauth_start_redirects_with_state_cookie PASSED [ 64%]
+tests/test_05_security.py::test_oauth_callback_rejects_bad_state PASSED  [ 66%]
+tests/test_05_security.py::test_oauth_full_flow_owner_can_reveal PASSED  [ 67%]
+tests/test_05_security.py::test_oauth_non_owner_gets_403 PASSED          [ 69%]
+tests/test_05_security.py::test_reveal_without_csrf_header_rejected PASSED [ 71%]
+tests/test_05_security.py::test_owner_session_cannot_be_forged PASSED    [ 73%]
+tests/test_05_security.py::test_can_stop_requires_shared_secret PASSED   [ 75%]
+tests/test_05_security.py::test_can_stop_reports_busy_with_inflight PASSED [ 77%]
+tests/test_05_security.py::test_health_loading_model_state PASSED        [ 79%]
+tests/test_05_security.py::test_fingerprint_push_never_sends_key_material PASSED [ 81%]
+tests/test_05_security.py::test_tool_audit_log_written_without_secrets PASSED [ 83%]
+tests/test_06_workflow_logic.py::test_schedule_never_wakes_keepalive_removed PASSED [ 84%]
+tests/test_06_workflow_logic.py::test_issue_wake_disabled PASSED         [ 86%]
+tests/test_06_workflow_logic.py::test_manual_dispatch_allowed PASSED     [ 88%]
+tests/test_06_workflow_logic.py::test_unknown_event_denied PASSED        [ 90%]
+tests/test_06_workflow_logic.py::test_malicious_issue_text_is_never_executed PASSED [ 92%]
+tests/test_06_workflow_logic.py::test_workflows_exist PASSED             [ 94%]
+tests/test_06_workflow_logic.py::test_no_direct_user_text_interpolation_in_run_blocks PASSED [ 96%]
+tests/test_06_workflow_logic.py::test_workflows_have_least_privilege_permissions PASSED [ 98%]
+tests/test_06_workflow_logic.py::test_no_secrets_printed_in_workflow_outputs PASSED [100%]
+
+=============================== warnings summary ===============================
+../../.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1428
+  /home/z/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:1428: PytestConfigWarning: Unknown config option: timeout
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+tests/test_05_security.py::test_owner_session_cannot_be_forged
+tests/test_05_security.py::test_owner_session_cannot_be_forged
+  /home/z/.venv/lib/python3.12/site-packages/starlette/testclient.py:445: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    return super().request(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 53 passed, 3 warnings in 3.96s ========================
+
+

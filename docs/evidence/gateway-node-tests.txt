@@ -1,0 +1,25 @@
+✔ cold start: queued request is woken, held, and answered with the real response (36.196568ms)
+✔ hold timeout: honest 503 + Retry-After + request_id, request still forwarded later (43.295943ms)
+✔ concurrent requests trigger exactly ONE wake and share the queue (8.121314ms)
+✔ duplicate X-Request-Id while queued does not execute twice (6.259024ms)
+✔ invalid API key is rejected BEFORE waking (no cost, no codespace start) (1.988213ms)
+✔ states follow reality: WAKING -> STARTING -> LOADING_MODEL -> READY (6.46074ms)
+✔ wake timeout produces 504 wake_timeout and ERROR state (no fake success) (56.281018ms)
+✔ GitHub start failure -> ERROR state, queued requests get 502, last_error recorded (6.515497ms)
+✔ idle shutdown: stops the codespace only when idle AND backend says not busy (5.945106ms)
+✔ idle shutdown is blocked while backend reports busy (model loading / agent task) (5.583869ms)
+✔ a new request during idle cancels the shutdown plan (activity refreshed) (4003.967014ms)
+✔ GitHub stop failure is recorded and visible; state returns to READY (7.027273ms)
+✔ deep health reports codespace_state, gateway fields and backend truth without waking (0.578658ms)
+✔ streamed response passes through chunks and decrements in-flight when finished (16.738742ms)
+✔ request status endpoint: queued request visible, unknown id -> 404 (6.288388ms)
+✔ internal endpoints require the shared secret; register persists base_url + key hash (0.842888ms)
+✔ key hash registration makes bad keys fail fast at the edge (after registration) (59.358356ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6247.919672
