@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 import pathlib
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
@@ -75,13 +76,19 @@ CHILD_ENV_ALLOW = (
 
 def child_env() -> dict:
     """Scratch environment for agent child processes: allowlist + scrub.
-    Anything containing TOKEN/SECRET/KEY/PAT/CREDENTIAL is dropped even if a
-    future change adds it to the allowlist by mistake."""
-    import re as _re
+    Keys are split into word parts; any part naming a secret category
+    (TOKEN/SECRET/KEY/PAT/CRED...) is dropped even if an allowlist entry
+    would otherwise leak it (PATH contains 'PAT' and must survive)."""
+    _BAD_PARTS = {"TOKEN", "TOKENS", "SECRET", "SECRETS", "KEY", "KEYS",
+                  "PAT", "PATS", "CRED", "CREDS", "CREDENTIAL", "CREDENTIALS"}
     out = {}
     for k, v in os.environ.items():
-        if k in CHILD_ENV_ALLOW and not _re.search(r"TOKEN|SECRET|KEY|PAT|CRED", k, _re.I):
-            out[k] = v
+        if k not in CHILD_ENV_ALLOW:
+            continue
+        parts = {p.upper() for p in re.split(r"[^A-Za-z]+", k) if p}
+        if parts & _BAD_PARTS:
+            continue
+        out[k] = v
     out["DEBIAN_FRONTEND"] = "noninteractive"
     out["PYTHONDONTWRITEBYTECODE"] = "1"
     return out
