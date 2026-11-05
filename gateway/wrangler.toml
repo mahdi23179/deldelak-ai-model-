@@ -1,0 +1,37 @@
+# Deldelak Gateway - Cloudflare Worker + Durable Object
+# Deploy: see docs/GATEWAY.md (secrets are NEVER stored in this file)
+name = "deldelak-gateway"
+main = "src/worker.js"
+compatibility_date = "2024-12-01"
+
+# Durable Object provides a single strongly-consistent instance that keeps
+# the wake state, the request queue and the idle timer (free plan includes DOs).
+[[durable_objects.bindings]]
+name = "INSTANCE"
+class_name = "InstanceDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["InstanceDO"]
+
+# safety-net scheduler: re-arms the idle-check alarm after deployments.
+# This is NOT a keep-alive: it never pings the Codespace and never resets
+# GitHub's idle timer - it can only STOP an idle Codespace, not keep it awake.
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+OWNER = "mahdi23179"
+REPO = "deldelak-ai-model-"
+IDLE_SHUTDOWN_MINUTES = "10"
+HOLD_SECONDS = "75"
+START_TIMEOUT_MIN = "12"
+# Optional: pin the codespace (otherwise the first one on the repo is used)
+# CODESPACE_NAME = ""
+# CODESPACE_REF = "main"
+
+# REQUIRED SECRETS (set via `wrangler secret put ...` - never in git):
+#   GH_TOKEN               fine-grained PAT of the repo owner with
+#                          "Codespaces: write" + "Metadata: read" on this repo
+#   GATEWAY_SHARED_SECRET  shared secret for /internal/* (same value must be
+#                          set as Codespace secret DELDELAK_GATEWAY_SECRET)

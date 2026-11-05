@@ -1,0 +1,15 @@
+{
+  "name": "deldelak-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Always-on Cloudflare Worker gateway that wakes the Deldelak Codespace on demand (official GitHub API only) and stops it when idle.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
