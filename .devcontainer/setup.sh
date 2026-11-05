@@ -113,7 +113,7 @@ if [ ! -f "$REPO_ROOT/.state/api_key" ]; then
   python3 -c "import secrets;print('ddk-'+secrets.token_urlsafe(24))" > "$REPO_ROOT/.state/api_key"
   chmod 600 "$REPO_ROOT/.state/api_key"
 fi
-ok "کلید API آماده است (فایل .state/api_key + GET /api/key)"
+ok "کلید API آماده است (فایل .state/api_key - بازیابی فقط توسط مالک با گیت‌هاب: /api/key/oauth/start)"
 
 log "مرحله ۶/۶: راه‌اندازی سرویس"
 bash "$REPO_ROOT/.devcontainer/start.sh"

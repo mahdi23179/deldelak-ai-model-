@@ -29,40 +29,41 @@
 
 1. روی دکمه **Code → Codespaces → Create codespace on main** کلیک کنید.
 2. صبر کنید تا نصب خودکار تمام شود (بار اول ≈ ۱۰ تا ۲۰ دقیقه: ساخت llama.cpp + بارگیری ۲GB مدل با قابلیت ادامه از محل قطع).
-3. تب مرورگر UI چت باز می‌شود. کلید API یک بار خودکار از `GET /api/key` گرفته می‌شود — تمام!
+3. تب مرورگر UI چت باز می‌شود. مالک با «ورود با گیت‌هاب» کلید را بازیابی می‌کند (`/api/key/oauth/start`) — تمام!
 
-## روشن‌شدن خودکار (Auto-Wake) — چت‌بات با درخواست کاربر زنده شود
+## روشن‌شدن خودکار (Auto-Wake v2) — بدون هیچ اقدام دستی
 
-کداسپیس‌ها بعد از خلوتی خاموش می‌شوند. سه راه برای بیدارکردن خودکار:
+کداسپیس‌ها بعد از خلوتی خاموش می‌شوند. راه‌حل جدید یک **Gateway همیشه‌در‌دسترس** است:
 
-| راه | چه کسی | چطور |
-|---|---|---|
-| **دکمه Run workflow** | صاحب مخزن | تب Actions → «Wake Deldelak Codespace» → Run |
-| **ساخت Issue با `!wake`** | هر کسی، بدون توکن! | یک Issue با عنوان یا متن حاوی `!wake` بسازید؛ ربات خودش روشن می‌شود و لینک را کامنت می‌کند |
-| **فراخوانی API** | اتوماسیون شما | `curl -X POST -H "Authorization: token $GH_TOKEN" https://api.github.com/repos/mahdi23179/deldelak-ai-model-/dispatches -f event_type=wake-bot` |
+```
+کاربر → https://<gateway>.workers.dev/v1/chat/completions (فقط یک URL و یک کلید)
+          ├─ Codespace روشن است → پروکسی مستقیم
+          └─ Codespace خاموش است → روشن‌سازی رسمی با Codespaces API → درخواست در صف محفوظ → پس از آماده‌شدن اجرا
+                                        └─ پس از ۱۰ دقیقه بی‌کاری: خاموشی خودکار (idempotent)
+```
 
-پس از روشن‌شدن، workflow پورت چت‌بات را **عمومی** می‌کند، idle timeout را روی حداکثر (۲۴۰ دقیقه) می‌گذارد و لینک عمومی را در خروجی Actions نشان می‌دهد.
+- دیگر نیازی به `!wake`، ساخت Issue، ورود به GitHub یا اجرای workflow نیست — همه حذف شدند.
+- پاسخ ساختگی وجود ندارد: اگر Cold Start طولانی شد، 503 + Retry-After + شناسهٔ درخواست برمی‌گردد و درخواست گم نمی‌شود.
+- Keep-Alive دائمی ممنوع است و از طراحی حذف شده (سهمیهٔ رایگان حفظ می‌شود).
 
-**نگه‌داشتن روشن (Keep-Alive):** هر درخواست به پورت فورواردشده، تایمر خاموشی را صفر می‌کند؛ پس:
-- خود کاربرانی که چت می‌کنند ربات را زنده نگه می‌دارند، یا
-- اسکریپت `scripts/keepalive.sh` را روی سیستم خودتان/سرویس کرون رایگان اجرا کنید، یا
-- متغیر مخزن `KEEPALIVE_ENABLED=true` بسازید تا workflow هر ۲۵ دقیقه خودش ping کند (هشدار: سهمیه رایگان را مصرف می‌کند — بخش محدودیت‌ها را بخوانید).
+راه‌اندازی یک‌باره: [`docs/GATEWAY.md`](docs/GATEWAY.md) • اپراتوری دستی مالک: workflow «Codespace ops»
 
-جزئیات کامل: [`docs/AUTO_WAKE.md`](docs/AUTO_WAKE.md) • محدودیت‌ها: [`docs/LIMITS.md`](docs/LIMITS.md)
+جزئیات: [`docs/GATEWAY.md`](docs/GATEWAY.md) • محدودیت‌ها: [`docs/LIMITS.md`](docs/LIMITS.md)
 
 ## API
 
 | مسیر | توضیح |
 |---|---|
-| `GET /health` | سلامت سرویس (بدون احراز هویت) |
+| `GET /health` | سلامت سه‌لایه: گیت‌وی/بک‌اند/مدل + صف و فعالیت (بدون احراز) |
 | `GET /v1/models` | فهرست مدل |
 | `POST /v1/chat/completions` | چت سازگار با OpenAI (پشتیبانی استریم) |
+| `GET /api/key` | فقط راهنمای بازیابی مالک — کلید به غریبه داده نمی‌شود |
+| `GET /api/key/oauth/start` | ورود مالک با گیت‌هاب (فقط حساب `mahdi23179`) |
+| `POST /api/key/reveal` · `/rotate` · `/revoke` | نمایش/چرخش/ابطال کلید (نشست مالک یا کلید معتبر + CSRF) |
+| `POST /v1/projects/{id}/export-token` | توکن یک‌بارمصرف دانلود (کلید هرگز در URL نیست) |
+| `GET /v1/requests/{id}` (روی گیت‌وی) | وضعیت درخواست‌های صف‌شده هنگام Cold Start |
 | `POST /v1/agent/tasks` | ثبت تسک برای عامل |
-| `GET /v1/agent/tasks/{id}` | وضعیت + گام‌ها + خروجی‌ها |
-| `POST /v1/agent/tasks/{id}/approve` | تأیید/رد عملیات حساس |
 | `GET /v1/system/status` | CPU/RAM/دیسک/مدل/توکن‌برثانیه |
-| `GET/PUT/DELETE /v1/files` | مدیریت فایل فضای کاری |
-| `GET /v1/projects` + export | مدیریت پروژه و دانلود ZIP |
 
 احراز هویت: هدر `Authorization: Bearer <key>` یا `X-API-Key: <key>`.
 مستند کامل: [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md).
@@ -129,19 +130,22 @@ python3 -m uvicorn backend.main:app --port 8000   # UI روی http://localhost:8
 
 ```
 .devcontainer/     نصب خودکار Codespace (setup + start)
-.github/workflows/ ci.yml + wake-codespace.yml (Auto-Wake)
-backend/           FastAPI، llama.cpp، SQLite، AgentEngine، ابزارها
-frontend/          UI فارسی RTL (HTML/CSS/JS خالص، بدون فریم‌ورک)
-scripts/           wake.sh، keepalive.sh
-tests/             ۲۲ تست + سناریوهای واقعی
-docs/              قرارداد API، Auto-Wake، محدودیت‌ها، گزارش تست
+.github/workflows/ ci.yml + codespace-ops.yml (عملیات دستی مالک با تأیید واقعی وضعیت)
+backend/           FastAPI، llama.cpp، SQLite، AgentEngine، ابزارهای سخت‌گیرانه
+frontend/          UI فارسی RTL (HTML/CSS/JS خالص) + وضعیت سرویس + مدیریت کلید مالک
+gateway/           Cloudflare Worker + Durable Object (Wake/صف/خاموشی خودکار)
+scripts/           wake.sh، scripts/wf/ (منطق workflow + تست واحد)
+tests/             ۳۳+ تست + سناریوهای واقعی
+docs/              GATEWAY، قرارداد API، ممیزی، محدودیت‌ها، چک‌لیست E2E
 ```
 
 ## امنیت
 
-- کلید API تصادفی در اولین راه‌اندازی ساخته می‌شود؛ فقط **یک بار** از `GET /api/key` قابل گرفتن است (بعد از آن احراز هویت لازم است).
-- هرگز توکن/کلیدی در کد یا گیت ذخیره نمی‌شود؛ `.gitignore` مسیرهای `.state/` و `*.gguf` را می‌بندد.
-- برای چرخش کلید: `POST /api/key/rotate`.
+- **کلید API هرگز به اولین درخواست‌کننده داده نمی‌شود**؛ بازیابی فقط با OAuth گیت‌هاب و فقط برای حساب مالک (`mahdi23179`). Client Secret فقط در Codespace Secrets است و توکن OAuth هرگز ذخیره نمی‌شود (یک‌بار مصرف).
+- نمایش/چرخش/ابطال کلید با نشست کوتاه امضاشده (HttpOnly cookie) + هدر CSRF؛ در لاگ‌ها فقط اثر انگشت sha256 ثبت می‌شود.
+- ابزارهای عامل: env پاک‌سازی‌شده (توکن‌ها به فرایند فرزند نمی‌رسند)، محدودیت CPU/RAM/زمان با کشتن کل گروه فرایند، الگوهای حساس نیازمند تأیید، لاگ audit در `.state/audit.jsonl`.
+- مسیرها با بررسی symlink و commonpath محبوس می‌شوند (باگ prefix traversal قدیمی رفع شد).
+- `.gitignore` مسیرهای `.state/` و `*.gguf` را می‌بندد؛ توکن/کلید در هیچ Commit یا لاگی نیست.
 
 </div>
 
