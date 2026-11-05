@@ -58,6 +58,10 @@
       'nav.chat': 'چت', 'nav.agent': 'عامل', 'nav.files': 'فایل‌ها',
       'nav.projects': 'پروژه‌ها', 'nav.system': 'سیستم', 'nav.settings': 'تنظیمات',
       'status.ok': 'آماده', 'status.degraded': 'در حال آماده‌سازی', 'status.offline': 'قطع',
+      'status.busy': 'در حال پردازش', 'status.loading_model': 'در حال بارگیری مدل',
+      'status.stopped': 'سرور خاموش', 'status.waking': 'در حال روشن‌شدن',
+      'status.starting': 'در حال راه‌اندازی', 'status.stopping': 'در حال خاموش‌شدن', 'status.error': 'خطا',
+      'key.owner': 'ورود مالک با گیت‌هاب (بازیابی کلید)',
       'chat.new': 'گفتگوی جدید', 'chat.newTitle': 'گفتگوی جدید',
       'chat.placeholder': 'پیام خود را بنویسید…', 'chat.send': 'ارسال', 'chat.stop': 'توقف',
       'chat.empty': 'هنوز پیامی نیست', 'chat.emptyHint': 'اولین پیام را بفرستید تا گفتگو شروع شود',
@@ -129,6 +133,10 @@
       'nav.chat': 'Chat', 'nav.agent': 'Agent', 'nav.files': 'Files',
       'nav.projects': 'Projects', 'nav.system': 'System', 'nav.settings': 'Settings',
       'status.ok': 'Ready', 'status.degraded': 'Warming up', 'status.offline': 'Offline',
+      'status.busy': 'Processing', 'status.loading_model': 'Loading model',
+      'status.stopped': 'Server stopped', 'status.waking': 'Waking up',
+      'status.starting': 'Starting', 'status.stopping': 'Stopping', 'status.error': 'Error',
+      'key.owner': 'Owner login with GitHub (recover key)',
       'chat.new': 'New chat', 'chat.newTitle': 'New chat',
       'chat.placeholder': 'Type your message…', 'chat.send': 'Send', 'chat.stop': 'Stop',
       'chat.empty': 'No messages yet', 'chat.emptyHint': 'Send the first message to start the conversation',
@@ -447,6 +455,7 @@
       + '<p id="keyErr" class="form-err" hidden></p>'
       + '<div class="modal-actions">'
       + '<button type="button" class="btn btn-primary" id="keyConnect">' + esc(t('key.connect')) + '</button>'
+      + '<a type="button" class="btn btn-ghost" id="ownerOAuthBtn" href="/api/key/oauth/start">' + esc(t('key.owner')) + '</a>'
       + '</div>');
     const input = m.ov.querySelector('#keyInput');
     const errEl = m.ov.querySelector('#keyErr');
@@ -493,8 +502,21 @@
     const dot = $('#statusDot');
     const txt = $('#statusText');
     if (!j) { dot.className = 'dot dot-red'; txt.textContent = t('status.offline'); return; }
-    if (j.model_loaded) { dot.className = 'dot dot-green'; txt.textContent = t('status.ok'); }
-    else { dot.className = 'dot dot-yellow'; txt.textContent = t('status.degraded'); }
+    // gateway deep health: states read from reality (mission §7)
+    const gs = j.gateway ? j.gateway.state : null;
+    if (gs === 'STOPPED') { dot.className = 'dot dot-muted'; txt.textContent = t('status.stopped'); return; }
+    if (gs === 'WAKING' || gs === 'STARTING') { dot.className = 'dot dot-yellow'; txt.textContent = t('status.waking'); return; }
+    if (gs === 'LOADING_MODEL') { dot.className = 'dot dot-yellow'; txt.textContent = t('status.loading_model'); return; }
+    if (gs === 'STOPPING') { dot.className = 'dot dot-yellow'; txt.textContent = t('status.stopping'); return; }
+    if (gs === 'ERROR') { dot.className = 'dot dot-red'; txt.textContent = t('status.error'); return; }
+    if (j.model_loaded) {
+      dot.className = 'dot dot-green';
+      txt.textContent = (j.status === 'busy') ? t('status.busy') : t('status.ok');
+    } else if (j.model_loading) {
+      dot.className = 'dot dot-yellow'; txt.textContent = t('status.loading_model');
+    } else {
+      dot.className = 'dot dot-yellow'; txt.textContent = t('status.degraded');
+    }
   }
 
   async function loadModelBadge() {

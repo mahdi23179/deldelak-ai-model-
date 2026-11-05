@@ -217,6 +217,13 @@
     <section id="view-settings" class="view" hidden>
       <div class="view-head"><h2 data-i18n="nav.settings">تنظیمات</h2></div>
       <div class="settings-grid">
+        <div class="panel card pad" id="svcStatusCard">
+          <h3>وضعیت سرویس</h3>
+          <div id="svcStatusBody">
+            <p class="hint">در حال بارگذاری…</p>
+          </div>
+          <p class="hint">وضعیت‌ها از سیستم واقعی خوانده می‌شوند (Gateway → Codespace → Backend → مدل).</p>
+        </div>
         <div class="panel card pad">
           <h3 data-i18n="settings.key">کلید API</h3>
           <div class="row wrap">
@@ -231,6 +238,8 @@
             </button>
           </div>
           <p class="hint" data-i18n="settings.keyNote">این کلید را محرمانه نگه دارید؛ با چرخش، کلید قبلی باطل می‌شود.</p>
+          <h3 style="margin-top:12px">مدیریت کلید مالک</h3>
+          <div id="keyOwnerBox"><p class="hint">…</p></div>
         </div>
         <div class="panel card pad">
           <h3 data-i18n="settings.language">زبان رابط</h3>
@@ -307,6 +316,7 @@
 <div id="modalRoot"></div>
 
 <noscript><div class="noscript">جاوااسکریپت لازم است.</div></noscript>
+<script src="/js/key-admin.js" defer></script>
 <script src="/js/app.js"></script>
 </body>
 </html>

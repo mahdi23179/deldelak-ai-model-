@@ -838,3 +838,27 @@ textarea { resize: vertical; min-height: 60px; line-height: 1.7; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---- v2: service status table + owner key management (key-admin.js) ---- */
+.kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.kv-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border, #30363D);
+  vertical-align: top;
+}
+.kv-table tr:last-child td { border-bottom: none; }
+.kv-table td:first-child { color: var(--muted, #9198A1); white-space: nowrap; }
+.owner-actions { gap: 8px; margin: 8px 0; }
+#revealedKey {
+  display: inline-block;
+  padding: 6px 10px;
+  border: 1px solid var(--border, #30363D);
+  border-radius: 6px;
+  background: var(--panel, #161B22);
+  word-break: break-all;
+  max-width: 100%;
+}
