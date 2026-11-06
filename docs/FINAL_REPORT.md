@@ -36,15 +36,14 @@
 
 ## رازها و دسترسی‌ها (افشاگری صادقانه)
 
-- **Push انجام نشد**: این محیط اعتبارنامهٔ گیت‌هاب ندارد (`git push` → `could not read Username`). ۸ کامیت به‌صورت bundle و patch در کنار این مخزن تحویل شده‌اند؛ اعمال آن‌ها با `git fetch <bundle> && git merge FETCH_HEAD` یا `git am *.patch` ممکن است. ادعای «پوش شد» نکردیم چون نشد.
+- **Push انجام شد** ✅: در تاریخ ۲۰۲۶-۱۱-۰۶ با PAT موقت مالک هر دو برنچ push و با `git ls-remote` تأیید شد: `main` و `feature/engineering-overhaul` هر دو روی commit `0e901f9` هستند. تفاوت مبنا: `8554c8f..0e901f9` = ۳۷ فایل، +۳۵۶۱/−۳۷۱ خط. توکن فقط به‌صورت متغیر محیطی یک‌بارمصرف به push داده شد؛ در هیچ فایل، کامیت، لاگ یا git config ذخیره نشد و مسئولیت باطل‌سازی فوری آن با مالک است (صفحهٔ Settings → Developer settings → Fine-grained tokens).
 - هیچ Client Secret، PAT یا توکن Cloudflare در مخزن نیست و نباید باشد؛ همه به‌صورت secret در سرویس مربوطه تنظیم می‌شوند (`docs/GATEWAY.md` فهرست دقیق متغیرها را می‌دهد).
 - تست‌های زندهٔ ۱۶گانه فقط با حساب واقعی Cloudflare + Codespace قابل اجراست؛ اسکریپت و معیار پاس هر ۱۶ مورد از قبل نوشته شده تا اجرای آن دقیقه‌ای باشد.
 
 ## کارهای باقی‌مانده برای مالک (به ترتیب)
 
-1. اعمال برنچ (bundle/patch) و push از محیط خودتان.
-2. استقرار Gateway طبق `docs/GATEWAY.md` (Worker + DO + secretها).
-3. اجرای ۱۶ سناریوی `docs/e2e_checklist.md` و ثبت خروجی در `docs/evidence/e2e-results.md`.
-4. پر کردن اعداد واقعی `docs/TEST_REPORT.md` بخش ۳.
+1. استقرار Gateway طبق `docs/GATEWAY.md` (Worker + DO + secretها).
+2. اجرای ۱۶ سناریوی `docs/e2e_checklist.md` و ثبت خروجی در `docs/evidence/e2e-results.md`.
+3. پر کردن اعداد واقعی `docs/TEST_REPORT.md` بخش ۳.
 
 </div>
